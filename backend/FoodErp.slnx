@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/FoodErp.Api/FoodErp.Api.csproj" Id="3411b84c-65df-44d6-a97f-1e1ad5a83d8d" />
+  <Project Path="src/FoodErp.Application/FoodErp.Application.csproj" Id="57daafcf-8ca3-43b6-957f-f02c799f5ab3" />
+  <Project Path="src/FoodErp.Domain/FoodErp.Domain.csproj" Id="4c670f0e-c1bd-482e-8059-e0175fafc4a3" />
+  <Project Path="src/FoodErp.Infrastructure/FoodErp.Infrastructure.csproj" Id="dd79b6ee-be46-447d-8f3f-01af10a27f29" />
+</Solution>

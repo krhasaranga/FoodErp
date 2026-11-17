@@ -1,0 +1,62 @@
+# ========================
+# FoodErp .gitignore
+# ========================
+
+# ---- .NET / C# ----
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+_ReSharper*/
+*.DotSettings.user
+
+# ---- User Secrets (NEVER commit) ----
+secrets.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+# ---- EF Core Migrations (keep these) ----
+# Migrations are committed intentionally
+
+# ---- NuGet ----
+*.nupkg
+.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+.yarn/install-state.gz
+
+# ---- Environment files ----
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ---- Docker ----
+docker-compose.override.yml
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ---- IDE ----
+.idea/
+*.swp
+*.swo
+
