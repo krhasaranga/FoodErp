@@ -57,6 +57,15 @@ Desktop.ini
 
 # ---- IDE ----
 .idea/
+.vscode/
 *.swp
 *.swo
+
+# ---- Test results ----
+TestResults/
+*.trx
+*.coverage
+
+# ---- Publish output ----
+publish/
 
