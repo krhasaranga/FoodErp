@@ -22,6 +22,13 @@ public class RoleConfiguration : IEntityTypeConfiguration<ApplicationRole>
                 Name = "TenantUser",
                 NormalizedName = "TENANTUSER",
                 ConcurrencyStamp = "2"
+            },
+            new ApplicationRole
+            {
+                Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                Name = "PlatformAdmin",
+                NormalizedName = "PLATFORMADMIN",
+                ConcurrencyStamp = "3"
             }
         );
     }

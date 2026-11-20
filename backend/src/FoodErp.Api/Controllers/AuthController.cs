@@ -55,7 +55,18 @@ public class AuthController : ControllerBase
 
         await _userManager.AddToRoleAsync(user, "TenantAdmin");
 
-        return Ok(new { tenantId = tenant.Id, userId = user.Id, message = "Tenant registered successfully." });
+        var roles = await _userManager.GetRolesAsync(user);
+        var token = _tokenService.GenerateToken(user, roles);
+
+        return Ok(new
+        {
+            token,
+            tenantId = tenant.Id,
+            userId = user.Id,
+            email = user.Email,
+            roles,
+            message = "Tenant registered successfully."
+        });
     }
 
     /// <summary>
