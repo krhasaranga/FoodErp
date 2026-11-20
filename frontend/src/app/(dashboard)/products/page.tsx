@@ -109,17 +109,26 @@ function ProductForm({ categories, units, onSaved, onClose }: {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError('');
     try {
       await api.post('/api/Products', {
-        ...form,
-        costPrice: parseFloat(form.costPrice),
-        sellingPrice: parseFloat(form.sellingPrice),
-        reorderLevel: parseInt(form.reorderLevel),
+        name: form.name,
+        code: form.sku,
+        sku: form.sku,
+        categoryId: form.categoryId,
+        unitId: form.unitId,
+        costPrice: parseFloat(form.costPrice) || 0,
+        sellingPrice: parseFloat(form.sellingPrice) || 0,
+        reorderLevel: parseFloat(form.reorderLevel) || 0,
+        type: 0,
       });
       onSaved();
       onClose();
-    } catch {
-      setError('Failed to save. Please try again.');
+    } catch (err: any) {
+      const msg = err?.response?.data?.errors?.Code?.[0] 
+               || err?.response?.data?.error 
+               || 'Failed to save. Please try again.';
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -225,8 +234,8 @@ export default function ProductsPage() {
   useEffect(() => { load(); }, [load]);
 
   const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.sku.toLowerCase().includes(search.toLowerCase())
+    (p.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (p.sku || (p as any).code || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const tabs: { key: Tab; label: string }[] = [
@@ -297,10 +306,10 @@ export default function ProductsPage() {
                   <tbody className="divide-y divide-gray-50">
                     {filtered.map(p => (
                       <tr key={p.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-mono text-gray-500">{p.sku}</td>
+                        <td className="px-4 py-3 font-mono text-gray-500">{p.sku || (p as any).code}</td>
                         <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
                         <td className="px-4 py-3 text-gray-600">{p.categoryName}</td>
-                        <td className="px-4 py-3 text-gray-600">{p.unitName}</td>
+                        <td className="px-4 py-3 text-gray-600">{p.unitName || (p as any).unitSymbol}</td>
                         <td className="px-4 py-3 text-right text-gray-600">₹{p.costPrice.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right font-medium">₹{p.sellingPrice.toFixed(2)}</td>
                         <td className="px-4 py-3">

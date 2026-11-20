@@ -1,4 +1,4 @@
-﻿using FoodErp.Application.DTOs.Products;
+using FoodErp.Application.DTOs.Products;
 using FoodErp.Application.Interfaces;
 using FoodErp.Application.Interfaces.Products;
 using FoodErp.Domain.Entities;
@@ -65,7 +65,7 @@ public class ProductService : IProductService
     public async Task<ProductDto> CreateAsync(CreateProductRequest request)
     {
         var product = Product.Create(
-            request.Code, request.Name, request.Type,
+            request.EffectiveCode, request.Name, request.Type,
             request.CategoryId, request.UnitId, _tenant.TenantId,
             request.CostPrice, request.SellingPrice,
             request.ReorderLevel, request.TrackExpiry, request.Description);
@@ -73,8 +73,24 @@ public class ProductService : IProductService
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
-        return await GetByIdAsync(product.Id)
-            ?? throw new InvalidOperationException("Failed to retrieve created product.");
+        var dto = await GetByIdAsync(product.Id);
+        if (dto != null) return dto;
+
+        var categoryName = await _db.ProductCategories
+            .Where(c => c.Id == product.CategoryId)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync() ?? string.Empty;
+
+        var unitSymbol = await _db.Units
+            .Where(u => u.Id == product.UnitId)
+            .Select(u => u.Symbol)
+            .FirstOrDefaultAsync() ?? string.Empty;
+
+        return new ProductDto(
+            product.Id, product.Code, product.Name, product.Description,
+            product.Type, product.CategoryId, categoryName,
+            product.UnitId, unitSymbol, product.CostPrice, product.SellingPrice,
+            product.ReorderLevel, product.TrackExpiry, product.IsActive, product.CreatedAt);
     }
 
     public async Task<ProductDto> UpdateAsync(Guid id, UpdateProductRequest request)
@@ -82,13 +98,29 @@ public class ProductService : IProductService
         var product = await _db.Products.FindAsync(id)
             ?? throw new KeyNotFoundException($"Product {id} not found.");
 
-        product.Update(request.Code, request.Name, request.Description,
+        product.Update(request.EffectiveCode, request.Name, request.Description,
             request.CategoryId, request.UnitId, request.ReorderLevel, request.TrackExpiry);
 
         await _db.SaveChangesAsync();
 
-        return await GetByIdAsync(id)
-            ?? throw new InvalidOperationException("Failed to retrieve updated product.");
+        var dto = await GetByIdAsync(id);
+        if (dto != null) return dto;
+
+        var categoryName = await _db.ProductCategories
+            .Where(c => c.Id == product.CategoryId)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync() ?? string.Empty;
+
+        var unitSymbol = await _db.Units
+            .Where(u => u.Id == product.UnitId)
+            .Select(u => u.Symbol)
+            .FirstOrDefaultAsync() ?? string.Empty;
+
+        return new ProductDto(
+            product.Id, product.Code, product.Name, product.Description,
+            product.Type, product.CategoryId, categoryName,
+            product.UnitId, unitSymbol, product.CostPrice, product.SellingPrice,
+            product.ReorderLevel, product.TrackExpiry, product.IsActive, product.CreatedAt);
     }
 
     public async Task UpdatePricesAsync(Guid id, UpdateProductPricesRequest request)

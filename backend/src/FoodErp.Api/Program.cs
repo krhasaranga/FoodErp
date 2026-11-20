@@ -35,26 +35,23 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 
-// --- Identity ---
-builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+// --- Identity (AddIdentityCore avoids cookie auth conflict with JWT) ---
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
-    // Relax password rules slightly for development; tighten for production
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 8;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = false;
     options.User.RequireUniqueEmail = true;
 })
+.AddRoles<ApplicationRole>()
 .AddEntityFrameworkStores<AppDbContext>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+.AddSignInManager();
 
 // --- JWT Authentication ---
 var jwtKey = builder.Configuration["Jwt:Key"]!;
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters

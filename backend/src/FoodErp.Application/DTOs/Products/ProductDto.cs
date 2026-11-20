@@ -1,4 +1,4 @@
-﻿using FoodErp.Domain.Entities;
+using FoodErp.Domain.Entities;
 
 namespace FoodErp.Application.DTOs.Products;
 
@@ -17,10 +17,16 @@ public record ProductDto(
     decimal ReorderLevel,
     bool TrackExpiry,
     bool IsActive,
-    DateTime CreatedAt);
+    DateTime CreatedAt)
+{
+    // Aliases so frontend interfaces using Sku / UnitName work seamlessly
+    public string Sku => Code;
+    public string UnitName => UnitSymbol;
+}
 
 public record CreateProductRequest(
-    string Code,
+    string? Code,
+    string? Sku,
     string Name,
     string? Description,
     ProductType Type,
@@ -29,16 +35,23 @@ public record CreateProductRequest(
     decimal CostPrice,
     decimal SellingPrice,
     decimal ReorderLevel = 0,
-    bool TrackExpiry = false);
+    bool TrackExpiry = false)
+{
+    public string EffectiveCode => !string.IsNullOrWhiteSpace(Code) ? Code : (Sku ?? string.Empty);
+}
 
 public record UpdateProductRequest(
-    string Code,
+    string? Code,
+    string? Sku,
     string Name,
     string? Description,
     Guid CategoryId,
     Guid UnitId,
     decimal ReorderLevel,
-    bool TrackExpiry);
+    bool TrackExpiry)
+{
+    public string EffectiveCode => !string.IsNullOrWhiteSpace(Code) ? Code : (Sku ?? string.Empty);
+}
 
 public record UpdateProductPricesRequest(
     decimal CostPrice,

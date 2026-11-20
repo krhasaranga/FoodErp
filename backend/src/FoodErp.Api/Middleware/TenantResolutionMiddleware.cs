@@ -1,4 +1,4 @@
-﻿using FoodErp.Infrastructure.Persistence;
+using FoodErp.Infrastructure.Persistence;
 
 namespace FoodErp.Api.Middleware;
 
@@ -13,14 +13,19 @@ public class TenantResolutionMiddleware
 
     public async Task InvokeAsync(HttpContext context, TenantContext tenantContext)
     {
-        // Extract tenantId from the authenticated JWT token claim.
-        // This is secure — the claim comes from our own signed token,
-        // not from anything the client can forge.
-        var tenantIdClaim = context.User.FindFirst("tenantId")?.Value;
+        // 1. Try to extract tenantId from the authenticated JWT token claim.
+        var tenantIdClaim = context.User.FindFirst("tenantId")?.Value 
+                         ?? context.User.FindFirst("TenantId")?.Value;
 
-        if (tenantIdClaim != null && Guid.TryParse(tenantIdClaim, out var tenantId))
+        if (!string.IsNullOrWhiteSpace(tenantIdClaim) && Guid.TryParse(tenantIdClaim, out var tenantId))
         {
             tenantContext.SetTenant(tenantId);
+        }
+        // 2. Fallback to X-Tenant-Id header for tooling, background tasks, or dev testing
+        else if (context.Request.Headers.TryGetValue("X-Tenant-Id", out var headerValue)
+                 && Guid.TryParse(headerValue, out var headerTenantId))
+        {
+            tenantContext.SetTenant(headerTenantId);
         }
 
         await _next(context);

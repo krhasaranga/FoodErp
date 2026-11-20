@@ -1,4 +1,5 @@
-﻿using FoodErp.Application.Interfaces;
+using System.Reflection;
+using FoodErp.Application.Interfaces;
 using FoodErp.Domain.Common;
 using FoodErp.Domain.Entities;
 using FoodErp.Infrastructure.Identity;
@@ -17,6 +18,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
         _tenantContext = tenantContext;
     }
 
+    // Products
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Unit> Units => Set<Unit>();
@@ -54,19 +56,39 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder); // applies Identity table configurations
+        base.OnModelCreating(modelBuilder);
 
-        // Apply all IEntityTypeConfiguration<T> classes in this assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
-        // Apply global tenant query filter to every entity implementing ITenantEntity
+        // Apply tenant query filter to every entity implementing ITenantEntity.
+        //
+        // IMPORTANT: We use a private generic method (ConfigureTenantFilter<T>) so that
+        // the filter lambda captures '_tenantContext' as a field reference on 'this'
+        // (the current AppDbContext instance). EF Core resolves 'this._tenantContext.TenantId'
+        // from the CURRENT DbContext instance at query execution time — not from the instance
+        // that was alive when the model was first compiled. This is the correct per-request
+        // multi-tenant pattern for EF Core.
+        //
+        // Do NOT use Expression.Constant(tenantContext) for this — it captures a fixed object
+        // reference at model build time, breaking tenant isolation for all subsequent requests.
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
             {
-                modelBuilder.Entity(entityType.ClrType)
-                    .AddTenantQueryFilter(_tenantContext);
+                typeof(AppDbContext)
+                    .GetMethod(nameof(ConfigureTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(entityType.ClrType)
+                    .Invoke(this, [modelBuilder]);
             }
         }
+    }
+
+    private void ConfigureTenantFilter<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, ITenantEntity
+    {
+        // '_tenantContext' here is 'this._tenantContext' — EF Core correctly evaluates
+        // this from the current DbContext instance at query time, not at model build time.
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
     }
 }

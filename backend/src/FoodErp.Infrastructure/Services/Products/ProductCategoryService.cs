@@ -1,4 +1,4 @@
-﻿using FoodErp.Application.DTOs.Products;
+using FoodErp.Application.DTOs.Products;
 using FoodErp.Application.Interfaces;
 using FoodErp.Application.Interfaces.Products;
 using FoodErp.Domain.Entities;
@@ -54,8 +54,22 @@ public class ProductCategoryService : IProductCategoryService
         _db.ProductCategories.Add(category);
         await _db.SaveChangesAsync();
 
-        return await GetByIdAsync(category.Id)
-            ?? throw new InvalidOperationException("Failed to retrieve created category.");
+        var dto = await GetByIdAsync(category.Id);
+        if (dto != null) return dto;
+
+        string? parentName = null;
+        if (category.ParentCategoryId.HasValue)
+        {
+            parentName = await _db.ProductCategories
+                .Where(c => c.Id == category.ParentCategoryId.Value)
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync();
+        }
+
+        return new CategoryDto(
+            category.Id, category.Name, category.Description,
+            category.ParentCategoryId, parentName,
+            category.IsActive, category.CreatedAt);
     }
 
     public async Task<CategoryDto> UpdateAsync(Guid id, UpdateCategoryRequest request)
@@ -66,8 +80,22 @@ public class ProductCategoryService : IProductCategoryService
         category.Update(request.Name, request.Description, request.ParentCategoryId);
         await _db.SaveChangesAsync();
 
-        return await GetByIdAsync(id)
-            ?? throw new InvalidOperationException("Failed to retrieve updated category.");
+        var dto = await GetByIdAsync(id);
+        if (dto != null) return dto;
+
+        string? parentName = null;
+        if (category.ParentCategoryId.HasValue)
+        {
+            parentName = await _db.ProductCategories
+                .Where(c => c.Id == category.ParentCategoryId.Value)
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync();
+        }
+
+        return new CategoryDto(
+            category.Id, category.Name, category.Description,
+            category.ParentCategoryId, parentName,
+            category.IsActive, category.CreatedAt);
     }
 
     public async Task DeactivateAsync(Guid id)
